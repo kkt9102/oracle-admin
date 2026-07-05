@@ -1,142 +1,380 @@
-.page {
-  --background: #fafafa;
-  --foreground: #fff;
-
-  --text-primary: #000;
-  --text-secondary: #666;
-
-  --button-primary-hover: #383838;
-  --button-secondary-hover: #f2f2f2;
-  --button-secondary-border: #ebebeb;
-
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-geist-sans);
-  background-color: var(--background);
+.loginPage,
+.dashboard {
+  min-height: 100vh;
+  color: #1d2428;
 }
 
-.main {
+.loginPage {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    linear-gradient(120deg, rgba(30, 91, 74, 0.12), transparent 38%),
+    #f6f7f4;
+}
+
+.loginPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  width: min(920px, 100%);
+  overflow: hidden;
+  border: 1px solid #dfe4db;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(29, 36, 40, 0.12);
+}
+
+.brandBlock {
   display: flex;
-  flex: 1;
-  width: 100%;
-  max-width: 800px;
+  min-height: 460px;
   flex-direction: column;
+  justify-content: flex-end;
+  gap: 18px;
+  padding: 48px;
+  background: #1e5b4a;
+  color: #ffffff;
+}
+
+.brandBlock h1,
+.topbar h1 {
+  font-size: 36px;
+  line-height: 1.12;
+  font-weight: 700;
+}
+
+.brandBlock p {
+  max-width: 440px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.eyebrow {
+  color: #c44a31;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.brandBlock .eyebrow {
+  color: #f3c37b;
+}
+
+.loginForm {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: 40px;
+}
+
+.loginForm label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #536066;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.loginForm input {
+  height: 44px;
+  border: 1px solid #cfd8d2;
+  border-radius: 6px;
+  padding: 0 12px;
+  color: #1d2428;
+  background: #ffffff;
+  font-size: 15px;
+}
+
+.loginForm input:focus {
+  border-color: #1e5b4a;
+  outline: 3px solid rgba(30, 91, 74, 0.16);
+}
+
+.loginForm button,
+.secondaryButton {
+  height: 42px;
+  border: 0;
+  border-radius: 6px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.loginForm button {
+  color: #ffffff;
+  background: #1e5b4a;
+}
+
+.loginForm button:disabled {
+  cursor: not-allowed;
+  background: #9ca7a1;
+}
+
+.secondaryButton {
+  padding: 0 16px;
+  color: #1d2428;
+  background: #e8eee8;
+}
+
+.errorText,
+.warningText {
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.errorText {
+  color: #8c2b1f;
+  background: #fdebe6;
+}
+
+.warningText {
+  color: #655015;
+  background: #fff4cc;
+}
+
+.dashboard {
+  padding: 28px;
+  background: #f6f7f4;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  max-width: 1180px;
+  margin: 0 auto 24px;
+}
+
+.summaryBand {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 1180px;
+  margin: 0 auto 24px;
+  border: 1px solid #dfe4db;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.summaryBand div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+}
+
+.summaryBand div + div {
+  border-left: 1px solid #dfe4db;
+}
+
+.summaryBand span {
+  color: #657178;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.summaryBand strong {
+  overflow-wrap: anywhere;
+  font-size: 18px;
+}
+
+.grid,
+.resourceGrid {
+  display: grid;
+  max-width: 1180px;
+  margin: 0 auto;
+  gap: 16px;
+}
+
+.grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.resourceGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.card,
+.resourceCard {
+  min-height: 160px;
+  border: 1px solid #dfe4db;
+  border-radius: 8px;
+  padding: 18px;
+  background: #ffffff;
+}
+
+.cardHeader {
+  display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  background-color: var(--foreground);
-  padding: 120px 60px;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
-.intro {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  gap: 24px;
+.card h2,
+.resourceCard h3 {
+  font-size: 16px;
+  line-height: 1.35;
 }
 
-.intro h1 {
-  max-width: 320px;
-  font-size: 40px;
-  font-weight: 600;
-  line-height: 48px;
-  letter-spacing: -2.4px;
-  text-wrap: balance;
-  color: var(--text-primary);
-}
-
-.intro p {
-  max-width: 440px;
-  font-size: 18px;
-  line-height: 32px;
-  text-wrap: balance;
-  color: var(--text-secondary);
-}
-
-.intro a {
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.ctas {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  max-width: 440px;
-  gap: 16px;
+.card p,
+.resourceCard p,
+.sectionHeader p {
+  color: #657178;
   font-size: 14px;
+  line-height: 1.65;
 }
 
-.ctas a {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 40px;
-  padding: 0 16px;
-  border-radius: 128px;
-  border: 1px solid transparent;
-  transition: 0.2s;
-  cursor: pointer;
-  width: fit-content;
-  font-weight: 500;
+.pill {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 800;
 }
 
-a.primary {
-  background: var(--text-primary);
-  color: var(--background);
-  gap: 8px;
+.ready {
+  color: #15513e;
+  background: #d9f2e4;
 }
 
-a.secondary {
-  border-color: var(--button-secondary-border);
+.missing {
+  color: #8c2b1f;
+  background: #fdebe6;
 }
 
-/* Enable hover only on non-touch devices */
-@media (hover: hover) and (pointer: fine) {
-  a.primary:hover {
-    background: var(--button-primary-hover);
-    border-color: transparent;
+.planned {
+  color: #655015;
+  background: #fff4cc;
+}
+
+.resourceSection {
+  max-width: 1180px;
+  margin: 30px auto 0;
+}
+
+.port_section {
+  max-width: 1180px;
+  margin: 30px auto;
+}
+
+.section_note {
+  margin-top: 4px;
+  color: #8c5a23 !important;
+  font-size: 13px !important;
+}
+
+.table_wrapper {
+  overflow-x: auto;
+  border: 1px solid #dfe4db;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.port_table {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.port_table th,
+.port_table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #edf0eb;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.port_table th {
+  color: #657178;
+  background: #f9faf8;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.port_table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.port_table code {
+  color: #334139;
+  font-family: var(--font-geist-mono), monospace;
+}
+
+.protocol_badge {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 4px 7px;
+  color: #15513e;
+  background: #e3f1e8;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.empty_state {
+  border: 1px dashed #cfd8d2;
+  border-radius: 8px;
+  padding: 28px;
+  color: #657178;
+  background: #ffffff;
+  font-size: 14px;
+  text-align: center;
+}
+
+.sectionHeader {
+  margin-bottom: 16px;
+}
+
+.sectionHeader h2 {
+  margin-bottom: 6px;
+  font-size: 22px;
+}
+
+@media (max-width: 920px) {
+  .loginPanel,
+  .summaryBand,
+  .grid,
+  .resourceGrid {
+    grid-template-columns: 1fr;
   }
 
-  a.secondary:hover {
-    background: var(--button-secondary-hover);
-    border-color: transparent;
+  .brandBlock {
+    min-height: 300px;
+  }
+
+  .summaryBand div + div {
+    border-top: 1px solid #dfe4db;
+    border-left: 0;
   }
 }
 
 @media (max-width: 600px) {
-  .main {
-    padding: 48px 24px;
+  .dashboard {
+    padding: 20px;
   }
 
-  .intro {
-    gap: 16px;
+  .loginPage {
+    padding: 16px;
   }
 
-  .intro h1 {
-    font-size: 32px;
-    line-height: 40px;
-    letter-spacing: -1.92px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .logo {
-    filter: invert();
+  .brandBlock,
+  .loginForm {
+    padding: 28px;
   }
 
-  .page {
-    --background: #000;
-    --foreground: #000;
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 
-    --text-primary: #ededed;
-    --text-secondary: #999;
-
-    --button-primary-hover: #ccc;
-    --button-secondary-hover: #1a1a1a;
-    --button-secondary-border: #1a1a1a;
+  .brandBlock h1,
+  .topbar h1 {
+    font-size: 30px;
   }
 }

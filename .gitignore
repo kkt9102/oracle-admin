@@ -19,10 +19,15 @@
 
 # production
 /build
+*.tar.gz
+*.tgz
+*.zip
 
 # misc
 .DS_Store
 *.pem
+.codex/
+develop.md
 
 # debug
 npm-debug.log*
@@ -32,6 +37,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+local.env
 
 # vercel
 .vercel
@@ -39,3 +45,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# AI
+CLAUDE.md
+AGENTS.md
+
+# TRG
+*.tar.gz
