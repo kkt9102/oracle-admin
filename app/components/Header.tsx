@@ -20,19 +20,19 @@ export default async function Header({ activePath = "dashboard" }: HeaderProps) 
       <nav className={styles.nav} aria-label="주요 메뉴">
         <ErrorNotificationCenter initialNotifications={notifications} />
         <Link
-          className={activePath === "dashboard" ? styles.activeLink : styles.link}
+          className={activePath === "dashboard" ? styles.active_link : styles.link}
           href="/"
         >
           대시보드
         </Link>
         <Link
-          className={activePath === "settings" ? styles.activeLink : styles.link}
+          className={activePath === "settings" ? styles.active_link : styles.link}
           href="/settings"
         >
           설정
         </Link>
         <form action={logoutAction}>
-          <button className={styles.logoutButton} type="submit">
+          <button className={styles.logout_button} type="submit">
             로그아웃
           </button>
         </form>

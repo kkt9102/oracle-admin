@@ -10,28 +10,28 @@
   margin: 0 auto;
 }
 
-.sectionHeader {
+.section_header {
   margin-bottom: 16px;
 }
 
-.sectionHeader h2 {
+.section_header h2 {
   margin-bottom: 6px;
   font-size: 22px;
 }
 
-.sectionHeader p {
+.section_header p {
   color: #657178;
   font-size: 14px;
   line-height: 1.65;
 }
 
-.settingGrid {
+.setting_grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
-.settingCard {
+.setting_card {
   min-height: 160px;
   border: 1px solid #dfe4db;
   border-radius: 8px;
@@ -39,20 +39,20 @@
   background: #ffffff;
 }
 
-.settingCard h3 {
+.setting_card h3 {
   margin-bottom: 14px;
   font-size: 16px;
   line-height: 1.35;
 }
 
-.settingCard p {
+.setting_card p {
   color: #657178;
   font-size: 14px;
   line-height: 1.65;
 }
 
 @media (max-width: 920px) {
-  .settingGrid {
+  .setting_grid {
     grid-template-columns: 1fr;
   }
 }

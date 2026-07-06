@@ -8,9 +8,9 @@ type LoginPanelProps = {
 
 export default function LoginPanel({ authConfigured, error }: LoginPanelProps) {
   return (
-    <main className={styles.loginPage}>
-      <section className={styles.loginPanel}>
-        <div className={styles.brandBlock}>
+    <main className={styles.login_page}>
+      <section className={styles.login_panel}>
+        <div className={styles.brand_block}>
           <p className={styles.eyebrow}>Oracle Cloud Free Tier</p>
           <h1>개인 관리자 로그인</h1>
           <p>
@@ -19,7 +19,7 @@ export default function LoginPanel({ authConfigured, error }: LoginPanelProps) {
           </p>
         </div>
 
-        <form action={loginAction} className={styles.loginForm}>
+        <form action={loginAction} className={styles.login_form}>
           <label>
             <span>아이디</span>
             <input
@@ -40,10 +40,10 @@ export default function LoginPanel({ authConfigured, error }: LoginPanelProps) {
             />
           </label>
           {error === "invalid" ? (
-            <p className={styles.errorText}>아이디 또는 비밀번호를 확인해 주세요.</p>
+            <p className={styles.error_text}>아이디 또는 비밀번호를 확인해 주세요.</p>
           ) : null}
           {!authConfigured ? (
-            <p className={styles.warningText}>
+            <p className={styles.warning_text}>
               ADMIN_USERNAME과 ADMIN_PASSWORD 환경변수를 먼저 설정해야 합니다.
             </p>
           ) : null}

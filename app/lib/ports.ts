@@ -1,4 +1,6 @@
 import { execFile } from "node:child_process";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import { promisify } from "node:util";
 import { addErrorNotification } from "./errorNotifications";
 
@@ -16,11 +18,20 @@ export type ListeningPort = {
 
 export type PortStatus = {
   generatedAt: string;
+  expiresAt: string;
+  cacheHit: boolean;
   available: boolean;
   source: "ss";
   message: string;
   ports: ListeningPort[];
 };
+
+const PORT_CACHE_INTERVAL_MS = 5 * 60 * 1000;
+const cacheFilePath = path.join(
+  process.env.ORACLE_ADMIN_CACHE_DIR || "/tmp/oracle-admin-cache",
+  "ports-status.json",
+);
+let refreshPromise: Promise<PortStatus> | null = null;
 
 const knownServices = new Map<number, string>([
   [22, "SSH"],
@@ -115,17 +126,62 @@ export function parseListeningPorts(output: string): ListeningPort[] {
   );
 }
 
-export async function getListeningPorts(): Promise<PortStatus> {
-  const generatedAt = new Date().toISOString();
+async function readCachedPortStatus() {
+  try {
+    const raw = await fs.readFile(cacheFilePath, "utf8");
+    const parsed = JSON.parse(raw) as PortStatus;
+    const expiresAt = new Date(parsed.expiresAt).getTime();
 
+    if (Number.isFinite(expiresAt) && Date.now() < expiresAt) {
+      return { ...parsed, cacheHit: true };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+async function writeCachedPortStatus(status: PortStatus) {
+  try {
+    await fs.mkdir(path.dirname(cacheFilePath), { recursive: true });
+    await fs.writeFile(cacheFilePath, JSON.stringify(status, null, 2), "utf8");
+  } catch (error) {
+    const errorDetail =
+      error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
+
+    await addErrorNotification(
+      "서버 캐시",
+      `포트 상태 캐시를 저장할 수 없습니다. ${errorDetail}`,
+    );
+  }
+}
+
+function createPortStatus(
+  available: boolean,
+  message: string,
+  ports: ListeningPort[],
+): PortStatus {
+  const generatedAt = Date.now();
+
+  return {
+    generatedAt: new Date(generatedAt).toISOString(),
+    expiresAt: new Date(generatedAt + PORT_CACHE_INTERVAL_MS).toISOString(),
+    cacheHit: false,
+    available,
+    source: "ss",
+    message,
+    ports,
+  };
+}
+
+async function refreshListeningPorts(): Promise<PortStatus> {
   if (process.platform !== "linux") {
-    return {
-      generatedAt,
-      available: false,
-      source: "ss",
-      message: "포트 조회는 배포된 Linux 서버에서 사용할 수 있습니다.",
-      ports: [],
-    };
+    return createPortStatus(
+      false,
+      "포트 조회는 배포된 Linux 서버에서 사용할 수 있습니다.",
+      [],
+    );
   }
 
   try {
@@ -135,13 +191,14 @@ export async function getListeningPorts(): Promise<PortStatus> {
       maxBuffer: 1024 * 1024,
     });
 
-    return {
-      generatedAt,
-      available: true,
-      source: "ss",
-      message: "현재 서버에서 연결을 기다리는 TCP·UDP 포트입니다.",
-      ports: parseListeningPorts(stdout),
-    };
+    const status = createPortStatus(
+      true,
+      "현재 서버에서 연결을 기다리는 TCP·UDP 포트입니다.",
+      parseListeningPorts(stdout),
+    );
+
+    await writeCachedPortStatus(status);
+    return status;
   } catch (error) {
     const errorDetail =
       error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
@@ -151,12 +208,36 @@ export async function getListeningPorts(): Promise<PortStatus> {
       `포트 정보를 조회할 수 없습니다. ${errorDetail}`,
     );
 
-    return {
-      generatedAt,
-      available: false,
-      source: "ss",
-      message: "포트 정보를 조회할 수 없습니다. 서버에 iproute 패키지와 실행 권한이 있는지 확인해 주세요.",
-      ports: [],
-    };
+    const status = createPortStatus(
+      false,
+      "포트 정보를 조회할 수 없습니다. 서버에 iproute 패키지와 실행 권한이 있는지 확인해 주세요.",
+      [],
+    );
+
+    await writeCachedPortStatus(status);
+    return status;
+  }
+}
+
+export async function getListeningPorts(): Promise<PortStatus> {
+  const cached = await readCachedPortStatus();
+
+  if (cached) {
+    return cached;
+  }
+
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  const request = refreshListeningPorts();
+  refreshPromise = request;
+
+  try {
+    return await request;
+  } finally {
+    if (refreshPromise === request) {
+      refreshPromise = null;
+    }
   }
 }

@@ -1,42 +1,42 @@
-.tableWrapper {
+.table_wrapper {
   overflow-x: auto;
   border: 1px solid #dfe4db;
   border-radius: 8px;
   background: #ffffff;
 }
 
-.portTable {
+.port_table {
   width: 100%;
   min-width: 820px;
   border-collapse: collapse;
   text-align: left;
 }
 
-.portTable th,
-.portTable td {
+.port_table th,
+.port_table td {
   padding: 14px 16px;
   border-bottom: 1px solid #edf0eb;
   font-size: 13px;
   vertical-align: middle;
 }
 
-.portTable th {
+.port_table th {
   color: #657178;
   background: #f9faf8;
   font-size: 11px;
   letter-spacing: 0.04em;
 }
 
-.portTable tbody tr:last-child td {
+.port_table tbody tr:last-child td {
   border-bottom: 0;
 }
 
-.portTable code {
+.port_table code {
   color: #334139;
   font-family: var(--font-geist-mono), monospace;
 }
 
-.protocolBadge {
+.protocol_badge {
   display: inline-block;
   border-radius: 4px;
   padding: 4px 7px;
@@ -46,7 +46,7 @@
   font-weight: 800;
 }
 
-.emptyState {
+.empty_state {
   border: 1px dashed #cfd8d2;
   border-radius: 8px;
   padding: 28px;

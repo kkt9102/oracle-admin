@@ -14,11 +14,13 @@ type SignalStatus = "normal" | "progress" | "stopped" | "unknown";
 type CloudCheck = {
   label: string;
   status: SignalStatus;
-  detail: string;
+  detail: string | string[];
 };
 
 type CloudStatus = {
+  cacheVersion: number;
   generatedAt: string;
+  expiresAt: string;
   cacheHit: boolean;
   tenancy: {
     configured: boolean;
@@ -39,10 +41,13 @@ type CloudStatus = {
 };
 
 const CACHE_INTERVAL_MS = 30 * 60 * 1000;
+const FAILURE_CACHE_INTERVAL_MS = 5 * 60 * 1000;
+const CACHE_VERSION = 3;
 const cacheFilePath = path.join(
   process.env.ORACLE_ADMIN_CACHE_DIR || "/tmp/oracle-admin-cache",
   "oci-status.json",
 );
+let refreshPromise: Promise<CloudStatus> | null = null;
 
 function hasEnv(name: string) {
   return Boolean(process.env[name]);
@@ -110,23 +115,33 @@ function summarizeInstances(instances: OciInstance[]): CloudCheck {
   return {
     label: "Compute 인스턴스",
     status: running > 0 ? "normal" : changing > 0 ? "progress" : "stopped",
-    detail: `총 ${instances.length}대 중 정상 ${running}대, 진행 중 ${changing}대, 정지 ${stopped}대입니다.`,
+    detail: [
+      `전체 ${instances.length}대`,
+      `정상 ${running}대`,
+      `진행 중 ${changing}대`,
+      `정지 ${stopped}대`,
+    ],
   };
 }
 
 function formatPortSummary(ports: OciIngressPort[]) {
   return ports
     .slice(0, 8)
-    .map((port) => `${port.protocol} ${port.portRange} (${port.ruleSource})`)
-    .join(", ");
+    .map((port) => `${port.protocol} ${port.portRange} (${port.ruleSource})`);
 }
 
 function createFallbackStatus(errorMessage?: string): CloudStatus {
   const tenancy = getConfiguredTenancy();
   const configured = tenancy.configured;
+  const generatedAt = Date.now();
 
   return {
-    generatedAt: new Date().toISOString(),
+    cacheVersion: CACHE_VERSION,
+    generatedAt: new Date(generatedAt).toISOString(),
+    expiresAt: new Date(
+      generatedAt +
+        (errorMessage ? FAILURE_CACHE_INTERVAL_MS : CACHE_INTERVAL_MS),
+    ).toISOString(),
     cacheHit: false,
     tenancy,
     checks: [
@@ -204,11 +219,23 @@ async function readCachedStatus() {
   try {
     const raw = await fs.readFile(cacheFilePath, "utf8");
     const parsed = JSON.parse(raw) as CloudStatus;
+
+    if (parsed.cacheVersion !== CACHE_VERSION) {
+      return null;
+    }
+
     const generatedAt = new Date(parsed.generatedAt).getTime();
+    const expiresAt = parsed.expiresAt
+      ? new Date(parsed.expiresAt).getTime()
+      : generatedAt +
+        (parsed.checks?.[0]?.status === "normal"
+          ? CACHE_INTERVAL_MS
+          : FAILURE_CACHE_INTERVAL_MS);
 
     if (
       Number.isFinite(generatedAt) &&
-      Date.now() - generatedAt < CACHE_INTERVAL_MS
+      Number.isFinite(expiresAt) &&
+      Date.now() < expiresAt
     ) {
       return { ...parsed, cacheHit: true };
     }
@@ -220,17 +247,23 @@ async function readCachedStatus() {
 }
 
 async function writeCachedStatus(status: CloudStatus) {
-  await fs.mkdir(path.dirname(cacheFilePath), { recursive: true });
-  await fs.writeFile(cacheFilePath, JSON.stringify(status, null, 2), "utf8");
+  try {
+    await fs.mkdir(path.dirname(cacheFilePath), { recursive: true });
+    await fs.writeFile(cacheFilePath, JSON.stringify(status, null, 2), "utf8");
+  } catch (error) {
+    const errorDetail =
+      error instanceof Error
+        ? error.message
+        : "알 수 없는 오류가 발생했습니다.";
+
+    await addErrorNotification(
+      "서버 캐시",
+      `OCI 상태 캐시를 저장할 수 없습니다. ${errorDetail}`,
+    );
+  }
 }
 
-export async function getCloudStatus(): Promise<CloudStatus> {
-  const cached = await readCachedStatus();
-
-  if (cached) {
-    return cached;
-  }
-
+async function refreshCloudStatus(): Promise<CloudStatus> {
   const config = getOciConfig();
 
   if (!config) {
@@ -242,8 +275,11 @@ export async function getCloudStatus(): Promise<CloudStatus> {
       listInstances(config),
       listIngressPorts(config),
     ]);
+    const generatedAt = Date.now();
     const status: CloudStatus = {
-      generatedAt: new Date().toISOString(),
+      cacheVersion: CACHE_VERSION,
+      generatedAt: new Date(generatedAt).toISOString(),
+      expiresAt: new Date(generatedAt + CACHE_INTERVAL_MS).toISOString(),
       cacheHit: false,
       tenancy: getConfiguredTenancy(),
       checks: [
@@ -307,17 +343,45 @@ export async function getCloudStatus(): Promise<CloudStatus> {
     return status;
   } catch (error) {
     const errorDetail =
-      error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
+      error instanceof Error
+        ? error.message
+        : "알 수 없는 오류가 발생했습니다.";
 
     await addErrorNotification(
       "OCI API",
       `OCI API 호출에 실패했습니다. ${errorDetail}`,
     );
 
-    return createFallbackStatus(
+    const fallbackStatus = createFallbackStatus(
       error instanceof Error
         ? `OCI API 호출에 실패했습니다. 설정과 IAM 권한을 확인해 주세요. (${error.message.slice(0, 140)})`
         : "OCI API 호출에 실패했습니다. 설정과 IAM 권한을 확인해 주세요.",
     );
+
+    await writeCachedStatus(fallbackStatus);
+    return fallbackStatus;
+  }
+}
+
+export async function getCloudStatus(): Promise<CloudStatus> {
+  const cached = await readCachedStatus();
+
+  if (cached) {
+    return cached;
+  }
+
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  const request = refreshCloudStatus();
+  refreshPromise = request;
+
+  try {
+    return await request;
+  } finally {
+    if (refreshPromise === request) {
+      refreshPromise = null;
+    }
   }
 }

@@ -28,8 +28,8 @@
 }
 
 .link,
-.activeLink,
-.logoutButton {
+.active_link,
+.logout_button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -46,12 +46,12 @@
   background: transparent;
 }
 
-.activeLink {
+.active_link {
   color: #15513e;
   background: #d9f2e4;
 }
 
-.logoutButton {
+.logout_button {
   border: 0;
   color: #1d2428;
   background: #e8eee8;

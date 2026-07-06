@@ -53,7 +53,7 @@ export default function UsageBars({ history }: UsageBarsProps) {
     <div className={styles.grid}>
       {metrics.map((metric) => (
         <article className={styles.card} key={metric.key}>
-          <div className={styles.cardHeader}>
+          <div className={styles.card_header}>
             <div>
               <h3>{metric.label}</h3>
               <p>{metric.description}</p>
@@ -68,7 +68,7 @@ export default function UsageBars({ history }: UsageBarsProps) {
             />
           </div>
 
-          <div className={styles.metricFooter}>
+          <div className={styles.metric_footer}>
             <span>{formatMetric(metric)}</span>
             <span>다음 갱신 {new Date(history.nextRefreshAt).toLocaleTimeString("ko-KR")}</span>
           </div>

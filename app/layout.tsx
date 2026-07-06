@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Oracle Admin",
-  description: "Personal Oracle Cloud Free Tier admin dashboard",
+  title: "오라클 클라우드 간단 상태창",
+  description: "",
 };
 
 export default function RootLayout({

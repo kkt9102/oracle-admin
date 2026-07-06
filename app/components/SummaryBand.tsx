@@ -11,7 +11,7 @@ type SummaryBandProps = {
 
 export default function SummaryBand({ items }: SummaryBandProps) {
   return (
-    <section className={styles.summaryBand}>
+    <section className={styles.summary_band}>
       {items.map((item) => (
         <div key={item.label}>
           <span>{item.label}</span>

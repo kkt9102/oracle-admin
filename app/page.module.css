@@ -6,7 +6,7 @@
 }
 
 .grid,
-.resourceGrid {
+.resource_grid {
   display: grid;
   max-width: 1180px;
   margin: 0 auto;
@@ -17,12 +17,12 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.resourceGrid {
+.resource_grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .card,
-.resourceCard {
+.resource_card {
   min-height: 160px;
   border: 1px solid #dfe4db;
   border-radius: 8px;
@@ -30,7 +30,7 @@
   background: #ffffff;
 }
 
-.cardHeader {
+.card_header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -39,52 +39,62 @@
 }
 
 .card h2,
-.resourceCard h3 {
+.resource_card h3 {
   font-size: 16px;
   line-height: 1.35;
 }
 
 .card p,
-.resourceCard p,
-.sectionHeader p {
+.resource_card p,
+.section_header p {
   color: #657178;
   font-size: 14px;
   line-height: 1.65;
 }
 
-.resourceSection {
+.status_list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+  color: #657178;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.resource_section {
   max-width: 1180px;
   margin: 30px auto 0;
 }
 
-.usageSection {
+.usage_section {
   max-width: 1180px;
   margin: 30px auto;
 }
 
-.portSection {
+.port_section {
   max-width: 1180px;
   margin: 30px auto;
 }
 
-.sectionNote {
+.section_note {
   margin-top: 4px;
   color: #8c5a23 !important;
   font-size: 13px !important;
 }
 
-.sectionHeader {
+.section_header {
   margin-bottom: 16px;
 }
 
-.sectionHeader h2 {
+.section_header h2 {
   margin-bottom: 6px;
   font-size: 22px;
 }
 
 @media (max-width: 920px) {
   .grid,
-  .resourceGrid {
+  .resource_grid {
     grid-template-columns: 1fr;
   }
 }

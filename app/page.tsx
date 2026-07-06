@@ -14,7 +14,25 @@ type SearchParams = Promise<{
   error?: string;
 }>;
 
-export default async function Home({ searchParams }: { searchParams: SearchParams }) {
+function DetailContent({ detail }: { detail: string | string[] }) {
+  if (Array.isArray(detail)) {
+    return (
+      <ul className={styles.status_list}>
+        {detail.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    );
+  }
+
+  return <p>{detail}</p>;
+}
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const [{ error }, authenticated] = await Promise.all([
     searchParams,
     isAuthenticated(),
@@ -50,17 +68,23 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           },
           {
             label: "리스닝 포트",
-            value: portStatus.available ? `${portStatus.ports.length}개` : "조회 불가",
+            value: portStatus.available
+              ? `${portStatus.ports.length}개`
+              : "조회 불가",
           },
         ]}
       />
 
-      <section className={styles.portSection} aria-labelledby="port-section-title">
-        <div className={styles.sectionHeader}>
-          <h2 id="port-section-title">현재 사용 중인 포트</h2>
+      <section
+        className={styles.port_section}
+        aria-labelledby="port_section_title"
+      >
+        <div className={styles.section_header}>
+          <h2 id="port_section_title">현재 사용 중인 포트</h2>
           <p>{portStatus.message}</p>
-          <p className={styles.sectionNote}>
-            모든 인터페이스에 바인딩되어도 OCI Security List 또는 NSG에서 허용되지 않으면 외부에서 접근할 수 없습니다.
+          <p className={styles.section_note}>
+            모든 인터페이스에 바인딩되어도 OCI Security List 또는 NSG에서
+            허용되지 않으면 외부에서 접근할 수 없습니다.
           </p>
         </div>
 
@@ -70,44 +94,50 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
       <section className={styles.grid}>
         {cloudStatus.checks.map((check) => (
           <article className={styles.card} key={check.label}>
-            <div className={styles.cardHeader}>
+            <div className={styles.card_header}>
               <h2>{check.label}</h2>
               <StatusPill status={check.status} />
             </div>
-            <p>{check.detail}</p>
+            <DetailContent detail={check.detail} />
           </article>
         ))}
       </section>
 
-      <section className={styles.usageSection} aria-labelledby="usage-section-title">
-        <div className={styles.sectionHeader}>
-          <h2 id="usage-section-title">서버 사용량</h2>
+      <section
+        className={styles.usage_section}
+        aria-labelledby="usage_section_title"
+      >
+        <div className={styles.section_header}>
+          <h2 id="usage_section_title">서버 사용량</h2>
           <p>
-            자동 갱신은 30분 단위로 제한하고, 최대 7일치 스냅샷을 서버 캐시에 저장합니다.
+            자동 갱신은 30분 단위로 제한하고, 최대 7일치 스냅샷을 서버 캐시에
+            저장합니다.
           </p>
-          <p className={styles.sectionNote}>
-            현재는 Linux 서버에서 직접 확인 가능한 메모리, 디스크, 부하를 보여줍니다. OCI 무료 티어 전체 한도는 Monitoring/Limit API 연결 후 확장합니다.
+          <p className={styles.section_note}>
+            현재는 Linux 서버에서 직접 확인 가능한 메모리, 디스크, 부하를
+            보여줍니다. OCI 무료 티어 전체 한도는 Monitoring/Limit API 연결 후
+            확장합니다.
           </p>
         </div>
 
         <UsageBars history={usageHistory} />
       </section>
 
-      <section className={styles.resourceSection}>
-        <div className={styles.sectionHeader}>
+      <section className={styles.resource_section}>
+        <div className={styles.section_header}>
           <h2>상태 관리 항목</h2>
           <p>OCI API 연결 후 이 영역에 실제 리소스 상태가 채워집니다.</p>
         </div>
-        <div className={styles.resourceGrid}>
+        <div className={styles.resource_grid}>
           {Object.entries(cloudStatus.resources).map(([group, items]) => (
-            <article className={styles.resourceCard} key={group}>
+            <article className={styles.resource_card} key={group}>
               {items.map((item) => (
                 <div key={item.label}>
-                  <div className={styles.cardHeader}>
+                  <div className={styles.card_header}>
                     <h3>{item.label}</h3>
                     <StatusPill status={item.status} />
                   </div>
-                  <p>{item.detail}</p>
+                  <DetailContent detail={item.detail} />
                 </div>
               ))}
             </article>

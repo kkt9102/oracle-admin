@@ -16,7 +16,7 @@ type PortTableProps = {
 export default function PortTable({ portStatus }: PortTableProps) {
   if (!portStatus.available || portStatus.ports.length === 0) {
     return (
-      <div className={styles.emptyState}>
+      <div className={styles.empty_state}>
         {portStatus.available
           ? "현재 확인된 리스닝 포트가 없습니다."
           : "OCI Linux 서버에 배포한 뒤 포트 정보를 확인할 수 있습니다."}
@@ -25,8 +25,8 @@ export default function PortTable({ portStatus }: PortTableProps) {
   }
 
   return (
-    <div className={styles.tableWrapper}>
-      <table className={styles.portTable}>
+    <div className={styles.table_wrapper}>
+      <table className={styles.port_table}>
         <thead>
           <tr>
             <th scope="col">포트</th>
@@ -44,7 +44,7 @@ export default function PortTable({ portStatus }: PortTableProps) {
                 <strong>{port.port}</strong>
               </td>
               <td>
-                <span className={styles.protocolBadge}>
+                <span className={styles.protocol_badge}>
                   {port.protocol.toUpperCase()}
                 </span>
               </td>

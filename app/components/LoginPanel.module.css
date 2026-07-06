@@ -1,4 +1,4 @@
-.loginPage {
+.login_page {
   display: grid;
   min-height: 100vh;
   place-items: center;
@@ -9,7 +9,7 @@
     #f6f7f4;
 }
 
-.loginPanel {
+.login_panel {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
   width: min(920px, 100%);
@@ -20,7 +20,7 @@
   box-shadow: 0 24px 80px rgba(29, 36, 40, 0.12);
 }
 
-.brandBlock {
+.brand_block {
   display: flex;
   min-height: 460px;
   flex-direction: column;
@@ -31,13 +31,13 @@
   color: #ffffff;
 }
 
-.brandBlock h1 {
+.brand_block h1 {
   font-size: 36px;
   line-height: 1.12;
   font-weight: 700;
 }
 
-.brandBlock p {
+.brand_block p {
   max-width: 440px;
   color: rgba(255, 255, 255, 0.78);
   font-size: 16px;
@@ -52,7 +52,7 @@
   text-transform: uppercase;
 }
 
-.loginForm {
+.login_form {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -60,7 +60,7 @@
   padding: 40px;
 }
 
-.loginForm label {
+.login_form label {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -69,7 +69,7 @@
   font-weight: 700;
 }
 
-.loginForm input {
+.login_form input {
   height: 44px;
   border: 1px solid #cfd8d2;
   border-radius: 6px;
@@ -79,12 +79,12 @@
   font-size: 15px;
 }
 
-.loginForm input:focus {
+.login_form input:focus {
   border-color: #1e5b4a;
   outline: 3px solid rgba(30, 91, 74, 0.16);
 }
 
-.loginForm button {
+.login_form button {
   height: 42px;
   border: 0;
   border-radius: 6px;
@@ -94,50 +94,50 @@
   cursor: pointer;
 }
 
-.loginForm button:disabled {
+.login_form button:disabled {
   cursor: not-allowed;
   background: #9ca7a1;
 }
 
-.errorText,
-.warningText {
+.error_text,
+.warning_text {
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 13px;
   line-height: 1.45;
 }
 
-.errorText {
+.error_text {
   color: #8c2b1f;
   background: #fdebe6;
 }
 
-.warningText {
+.warning_text {
   color: #655015;
   background: #fff4cc;
 }
 
 @media (max-width: 920px) {
-  .loginPanel {
+  .login_panel {
     grid-template-columns: 1fr;
   }
 
-  .brandBlock {
+  .brand_block {
     min-height: 300px;
   }
 }
 
 @media (max-width: 600px) {
-  .loginPage {
+  .login_page {
     padding: 16px;
   }
 
-  .brandBlock,
-  .loginForm {
+  .brand_block,
+  .login_form {
     padding: 28px;
   }
 
-  .brandBlock h1 {
+  .brand_block h1 {
     font-size: 30px;
   }
 }
