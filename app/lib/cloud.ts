@@ -1,11 +1,25 @@
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import {
+  getOciConfig,
+  listIngressPorts,
+  listInstances,
+  type OciIngressPort,
+  type OciInstance,
+} from "./oci";
+import { addErrorNotification } from "./errorNotifications";
+
+type SignalStatus = "normal" | "progress" | "stopped" | "unknown";
+
 type CloudCheck = {
   label: string;
-  status: "normal" | "progress" | "stopped" | "unknown";
+  status: SignalStatus;
   detail: string;
 };
 
 type CloudStatus = {
   generatedAt: string;
+  cacheHit: boolean;
   tenancy: {
     configured: boolean;
     region: string | null;
@@ -13,6 +27,7 @@ type CloudStatus = {
     userIdSet: boolean;
     fingerprintSet: boolean;
     privateKeySet: boolean;
+    compartmentIdSet: boolean;
   };
   checks: CloudCheck[];
   resources: {
@@ -23,83 +38,286 @@ type CloudStatus = {
   };
 };
 
+const CACHE_INTERVAL_MS = 30 * 60 * 1000;
+const cacheFilePath = path.join(
+  process.env.ORACLE_ADMIN_CACHE_DIR || "/tmp/oracle-admin-cache",
+  "oci-status.json",
+);
+
 function hasEnv(name: string) {
   return Boolean(process.env[name]);
 }
 
-export function getCloudStatus(): CloudStatus {
+function getConfiguredTenancy() {
   const tenancyIdSet = hasEnv("OCI_TENANCY_ID");
   const userIdSet = hasEnv("OCI_USER_ID");
   const fingerprintSet = hasEnv("OCI_FINGERPRINT");
   const privateKeySet = hasEnv("OCI_PRIVATE_KEY");
+  const compartmentIdSet = hasEnv("OCI_COMPARTMENT_ID");
   const region = process.env.OCI_REGION || null;
   const configured = Boolean(
     tenancyIdSet && userIdSet && fingerprintSet && privateKeySet && region,
   );
 
   return {
+    configured,
+    region,
+    tenancyIdSet,
+    userIdSet,
+    fingerprintSet,
+    privateKeySet,
+    compartmentIdSet,
+  };
+}
+
+function getInstanceStatus(instance: OciInstance): SignalStatus {
+  if (instance.lifecycleState === "RUNNING") {
+    return "normal";
+  }
+
+  if (
+    ["STARTING", "STOPPING", "PROVISIONING", "TERMINATING"].includes(
+      instance.lifecycleState,
+    )
+  ) {
+    return "progress";
+  }
+
+  if (["STOPPED", "TERMINATED"].includes(instance.lifecycleState)) {
+    return "stopped";
+  }
+
+  return "unknown";
+}
+
+function summarizeInstances(instances: OciInstance[]): CloudCheck {
+  if (instances.length === 0) {
+    return {
+      label: "Compute 인스턴스",
+      status: "unknown",
+      detail: "이 compartment에서 조회된 인스턴스가 없습니다.",
+    };
+  }
+
+  const running = instances.filter(
+    (instance) => instance.lifecycleState === "RUNNING",
+  ).length;
+  const stopped = instances.filter((instance) =>
+    ["STOPPED", "TERMINATED"].includes(instance.lifecycleState),
+  ).length;
+  const changing = instances.length - running - stopped;
+
+  return {
+    label: "Compute 인스턴스",
+    status: running > 0 ? "normal" : changing > 0 ? "progress" : "stopped",
+    detail: `총 ${instances.length}대 중 정상 ${running}대, 진행 중 ${changing}대, 정지 ${stopped}대입니다.`,
+  };
+}
+
+function formatPortSummary(ports: OciIngressPort[]) {
+  return ports
+    .slice(0, 8)
+    .map((port) => `${port.protocol} ${port.portRange} (${port.ruleSource})`)
+    .join(", ");
+}
+
+function createFallbackStatus(errorMessage?: string): CloudStatus {
+  const tenancy = getConfiguredTenancy();
+  const configured = tenancy.configured;
+
+  return {
     generatedAt: new Date().toISOString(),
-    tenancy: {
-      configured,
-      region,
-      tenancyIdSet,
-      userIdSet,
-      fingerprintSet,
-      privateKeySet,
-    },
+    cacheHit: false,
+    tenancy,
     checks: [
       {
         label: "OCI API 연결",
-        status: configured ? "normal" : "stopped",
+        status:
+          configured && !errorMessage
+            ? "normal"
+            : configured
+              ? "unknown"
+              : "stopped",
         detail: configured
-          ? "서버에서 OCI API를 호출할 준비가 되어 있습니다."
+          ? errorMessage || "서버에서 OCI API를 호출할 준비가 되어 있습니다."
           : "OCI_TENANCY_ID, OCI_USER_ID, OCI_FINGERPRINT, OCI_PRIVATE_KEY, OCI_REGION 설정이 필요합니다.",
       },
       {
         label: "Compute 상태",
         status: configured ? "progress" : "stopped",
-        detail: "OCI Compute API를 연결하면 인스턴스 실행/정지 상태를 신호등으로 표시합니다.",
+        detail: configured
+          ? "OCI API 응답을 기다리고 있습니다."
+          : "OCI 설정을 완료하면 인스턴스 상태를 조회합니다.",
       },
       {
         label: "클라우드 방화벽",
         status: configured ? "progress" : "stopped",
-        detail: "Security List와 NSG 규칙을 연결하면 외부 허용 포트를 확인합니다.",
+        detail: configured
+          ? "Security List와 NSG 규칙 조회를 준비 중입니다."
+          : "OCI 설정을 완료하면 외부 허용 포트를 조회합니다.",
       },
       {
         label: "사용량 모니터링",
-        status: configured ? "progress" : "stopped",
-        detail: "Monitoring API를 연결하면 무료 티어 한도 대비 사용량을 표시합니다.",
+        status: "progress",
+        detail:
+          "서버 내부 사용량은 표시 중이며, OCI 무료 티어 한도는 추후 Limit/Monitoring API로 확장합니다.",
       },
     ],
     resources: {
       instances: [
         {
           label: "Compute 인스턴스",
-          status: "progress",
-          detail: "RUNNING은 정상, STARTING/STOPPING은 진행 중, STOPPED는 정지로 표시할 예정입니다.",
+          status: configured ? "progress" : "stopped",
+          detail: configured
+            ? "OCI API 조회 결과가 아직 없습니다."
+            : "OCI 설정이 필요합니다.",
         },
       ],
       openPorts: [
         {
           label: "외부 허용 포트",
-          status: "progress",
-          detail: "서버 내부 포트와 OCI 방화벽 허용 포트를 분리해서 보여줄 예정입니다.",
+          status: configured ? "progress" : "stopped",
+          detail: configured
+            ? "Security List와 NSG 규칙 조회 결과가 아직 없습니다."
+            : "OCI 설정이 필요합니다.",
         },
       ],
       metrics: [
         {
-          label: "최근 사용량",
+          label: "무료 티어 한도",
           status: "progress",
-          detail: "현재는 서버 내부 사용량을 30분 단위로 저장하고, 추후 OCI metric을 연결합니다.",
+          detail: "OCI Limit/Usage API 연결 후 한도 대비 사용량을 표시합니다.",
         },
       ],
       announcements: [
         {
           label: "OCI 공지",
           status: "progress",
-          detail: "Oracle Cloud 점검, 장애, required action 공지를 연결할 예정입니다.",
+          detail: "Oracle Cloud 공지 API 연결 후 점검/장애 정보를 표시합니다.",
         },
       ],
     },
   };
+}
+
+async function readCachedStatus() {
+  try {
+    const raw = await fs.readFile(cacheFilePath, "utf8");
+    const parsed = JSON.parse(raw) as CloudStatus;
+    const generatedAt = new Date(parsed.generatedAt).getTime();
+
+    if (
+      Number.isFinite(generatedAt) &&
+      Date.now() - generatedAt < CACHE_INTERVAL_MS
+    ) {
+      return { ...parsed, cacheHit: true };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+async function writeCachedStatus(status: CloudStatus) {
+  await fs.mkdir(path.dirname(cacheFilePath), { recursive: true });
+  await fs.writeFile(cacheFilePath, JSON.stringify(status, null, 2), "utf8");
+}
+
+export async function getCloudStatus(): Promise<CloudStatus> {
+  const cached = await readCachedStatus();
+
+  if (cached) {
+    return cached;
+  }
+
+  const config = getOciConfig();
+
+  if (!config) {
+    return createFallbackStatus();
+  }
+
+  try {
+    const [instances, ports] = await Promise.all([
+      listInstances(config),
+      listIngressPorts(config),
+    ]);
+    const status: CloudStatus = {
+      generatedAt: new Date().toISOString(),
+      cacheHit: false,
+      tenancy: getConfiguredTenancy(),
+      checks: [
+        {
+          label: "OCI API 연결",
+          status: "normal",
+          detail: "OCI API 호출에 성공했습니다.",
+        },
+        summarizeInstances(instances),
+        {
+          label: "클라우드 방화벽",
+          status: ports.length > 0 ? "normal" : "unknown",
+          detail:
+            ports.length > 0
+              ? `외부 허용 규칙 ${ports.length}개를 확인했습니다.`
+              : "외부 허용 규칙이 없거나 조회되지 않았습니다.",
+        },
+        {
+          label: "사용량 모니터링",
+          status: "progress",
+          detail:
+            "서버 내부 사용량은 표시 중이며, OCI 무료 티어 한도는 추후 Limit/Monitoring API로 확장합니다.",
+        },
+      ],
+      resources: {
+        instances: instances.map((instance) => ({
+          label: instance.displayName,
+          status: getInstanceStatus(instance),
+          detail: `${instance.lifecycleState} / ${instance.shape} / ${instance.availabilityDomain}`,
+        })),
+        openPorts: [
+          {
+            label: "외부 허용 포트",
+            status: ports.length > 0 ? "normal" : "unknown",
+            detail:
+              ports.length > 0
+                ? formatPortSummary(ports)
+                : "Security List 또는 NSG에서 외부 허용 포트를 찾지 못했습니다.",
+          },
+        ],
+        metrics: [
+          {
+            label: "무료 티어 한도",
+            status: "progress",
+            detail:
+              "OCI Limit/Usage API 연결 후 한도 대비 사용량을 표시합니다.",
+          },
+        ],
+        announcements: [
+          {
+            label: "OCI 공지",
+            status: "progress",
+            detail:
+              "Oracle Cloud 공지 API 연결 후 점검/장애 정보를 표시합니다.",
+          },
+        ],
+      },
+    };
+
+    await writeCachedStatus(status);
+    return status;
+  } catch (error) {
+    const errorDetail =
+      error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
+
+    await addErrorNotification(
+      "OCI API",
+      `OCI API 호출에 실패했습니다. ${errorDetail}`,
+    );
+
+    return createFallbackStatus(
+      error instanceof Error
+        ? `OCI API 호출에 실패했습니다. 설정과 IAM 권한을 확인해 주세요. (${error.message.slice(0, 140)})`
+        : "OCI API 호출에 실패했습니다. 설정과 IAM 권한을 확인해 주세요.",
+    );
+  }
 }

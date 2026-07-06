@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "package:standalone": "npm run build && mkdir -p .next/standalone/.next && cp -R public .next/standalone/ && cp -R .next/static .next/standalone/.next/ && node -e \"const fs=require('fs');for(const file of ['.env','.env.local','local.env'])fs.rmSync('.next/standalone/'+file,{force:true});\" && find .next/standalone -name '._*' -delete && COPYFILE_DISABLE=1 tar -czf oracle-admin-standalone.tar.gz -C .next/standalone .",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "lucide-react": "^1.23.0",
     "next": "16.2.10",
     "react": "19.2.4",
     "react-dom": "19.2.4"

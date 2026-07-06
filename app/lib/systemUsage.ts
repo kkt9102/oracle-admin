@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+import { addErrorNotification } from "./errorNotifications";
 
 const execFileAsync = promisify(execFile);
 const SNAPSHOT_INTERVAL_MS = 30 * 60 * 1000;
@@ -82,46 +83,65 @@ function createMetric(
 }
 
 async function getDiskMetric() {
-  if (process.platform !== "linux") {
-    return createMetric(
-      "disk",
-      "디스크",
-      "GB",
-      0,
-      0,
-      "디스크 사용량은 배포된 Linux 서버에서 확인할 수 있습니다.",
-    );
-  }
+  let errorDetail = "디스크 정보를 읽을 수 없습니다.";
 
   try {
-    const { stdout } = await execFileAsync("df", ["-Pk", "/"], {
-      encoding: "utf8",
-      timeout: 5_000,
-      maxBuffer: 1024 * 1024,
-    });
-    const line = stdout.trim().split(/\r?\n/)[1];
-    const columns = line?.trim().split(/\s+/);
-    const totalKb = Number(columns?.[1]);
-    const usedKb = Number(columns?.[2]);
+    const stats = await fs.statfs("/");
+    const totalBytes = stats.blocks * stats.bsize;
+    const freeBytes = stats.bfree * stats.bsize;
 
     return createMetric(
       "disk",
       "디스크",
       "GB",
-      usedKb / 1024 / 1024,
-      totalKb / 1024 / 1024,
+      (totalBytes - freeBytes) / 1024 / 1024 / 1024,
+      totalBytes / 1024 / 1024 / 1024,
       "서버 루트 디스크 사용량입니다.",
     );
-  } catch {
-    return createMetric(
-      "disk",
-      "디스크",
-      "GB",
-      0,
-      0,
-      "디스크 사용량을 조회할 수 없습니다.",
-    );
+  } catch (error) {
+    errorDetail = error instanceof Error ? error.message : errorDetail;
+
+    if (process.platform === "linux") {
+      try {
+        const { stdout } = await execFileAsync("df", ["-Pk", "/"], {
+          encoding: "utf8",
+          timeout: 5_000,
+          maxBuffer: 1024 * 1024,
+        });
+        const line = stdout.trim().split(/\r?\n/)[1];
+        const columns = line?.trim().split(/\s+/);
+        const totalKb = Number(columns?.[1]);
+        const usedKb = Number(columns?.[2]);
+
+        if (Number.isFinite(totalKb) && Number.isFinite(usedKb)) {
+          return createMetric(
+            "disk",
+            "디스크",
+            "GB",
+            usedKb / 1024 / 1024,
+            totalKb / 1024 / 1024,
+            "서버 루트 디스크 사용량입니다.",
+          );
+        }
+      } catch (error) {
+        errorDetail = error instanceof Error ? error.message : errorDetail;
+      }
+    }
   }
+
+  await addErrorNotification(
+    "서버 사용량",
+    `디스크 사용량을 조회할 수 없습니다. ${errorDetail}`,
+  );
+
+  return createMetric(
+    "disk",
+    "디스크",
+    "GB",
+    0,
+    0,
+    "디스크 사용량을 조회할 수 없습니다.",
+  );
 }
 
 async function createUsageSnapshot(): Promise<UsageSnapshot> {

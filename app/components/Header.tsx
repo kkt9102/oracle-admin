@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { logoutAction } from "../actions";
+import { getErrorNotifications } from "../lib/errorNotifications";
+import ErrorNotificationCenter from "./ErrorNotificationCenter";
 import styles from "./Header.module.css";
 
 type HeaderProps = {
   activePath?: "dashboard" | "settings";
 };
 
-export default function Header({ activePath = "dashboard" }: HeaderProps) {
+export default async function Header({ activePath = "dashboard" }: HeaderProps) {
+  const notifications = await getErrorNotifications();
+
   return (
     <header className={styles.header}>
       <div>
@@ -14,6 +18,7 @@ export default function Header({ activePath = "dashboard" }: HeaderProps) {
         <h1>무료 티어 서버 상태</h1>
       </div>
       <nav className={styles.nav} aria-label="주요 메뉴">
+        <ErrorNotificationCenter initialNotifications={notifications} />
         <Link
           className={activePath === "dashboard" ? styles.activeLink : styles.link}
           href="/"

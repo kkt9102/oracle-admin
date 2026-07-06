@@ -34,6 +34,20 @@ function getSessionMaxAgeSeconds() {
   return seconds;
 }
 
+function isCookieSecure() {
+  const configuredValue = getEnv("ADMIN_COOKIE_SECURE");
+
+  if (configuredValue === "true") {
+    return true;
+  }
+
+  if (configuredValue === "false") {
+    return false;
+  }
+
+  return process.env.NODE_ENV === "production";
+}
+
 function signSessionValue(expiresAt: number) {
   const secret = getSessionSecret();
 
@@ -89,7 +103,7 @@ export async function createAdminSession() {
     value,
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: isCookieSecure(),
     path: "/",
     maxAge: sessionMaxAgeSeconds,
   });

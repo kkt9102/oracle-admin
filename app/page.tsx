@@ -25,7 +25,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   }
 
   const [cloudStatus, portStatus, usageHistory] = await Promise.all([
-    Promise.resolve(getCloudStatus()),
+    getCloudStatus(),
     getListeningPorts(),
     getUsageHistory(),
   ]);
@@ -46,7 +46,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           },
           {
             label: "업데이트",
-            value: new Date(cloudStatus.generatedAt).toLocaleString("ko-KR"),
+            value: `${new Date(cloudStatus.generatedAt).toLocaleString("ko-KR")}${cloudStatus.cacheHit ? " (캐시)" : ""}`,
           },
           {
             label: "리스닝 포트",

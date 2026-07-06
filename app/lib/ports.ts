@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { addErrorNotification } from "./errorNotifications";
 
 const execFileAsync = promisify(execFile);
 
@@ -141,7 +142,15 @@ export async function getListeningPorts(): Promise<PortStatus> {
       message: "현재 서버에서 연결을 기다리는 TCP·UDP 포트입니다.",
       ports: parseListeningPorts(stdout),
     };
-  } catch {
+  } catch (error) {
+    const errorDetail =
+      error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
+
+    await addErrorNotification(
+      "서버 포트",
+      `포트 정보를 조회할 수 없습니다. ${errorDetail}`,
+    );
+
     return {
       generatedAt,
       available: false,

@@ -7,5 +7,5 @@ export async function GET() {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  return NextResponse.json(getCloudStatus());
+  return NextResponse.json(await getCloudStatus());
 }

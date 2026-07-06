@@ -27,11 +27,21 @@ Node.js 서버로 배포합니다. 가장 단순한 방식은 Oracle Cloud 인�
 
 ```bash
 npm ci
-npm run build
-cp -R public .next/standalone/
-cp -R .next/static .next/standalone/.next/
-tar -czf oracle-admin-standalone.tar.gz -C .next/standalone .
+npm run package:standalone
+tar -tzf oracle-admin-standalone.tar.gz | grep '^.next/static/chunks/' | head
+tar -tzf oracle-admin-standalone.tar.gz | grep -E '(^|/)\.env|local\.env' || echo "env 파일 없음"
+tar -tzf oracle-admin-standalone.tar.gz | grep '/\._' || echo "AppleDouble 파일 없음"
 ```
+
+`/_next/static/chunks/*.css`, `/_next/static/chunks/*.js`가 404로 깨지면 대부분
+`.next/static` 폴더가 standalone 압축파일에 포함되지 않았거나, 서버에서 예전 폴더의
+`server.js`를 실행 중인 상태입니다. 위 `tar -tzf` 명령으로 압축파일 안에
+`.next/static/chunks/`가 들어있는지 먼저 확인합니다.
+
+압축파일에 `.env`, `.env.local`, `local.env`가 들어가면 안 됩니다. 런타임 환경변수는
+압축파일에 포함하지 않고 서버의 systemd `EnvironmentFile` 또는 별도 secret으로 관리합니다.
+macOS에서 압축을 만들면 `._.env` 같은 AppleDouble 메타데이터 파일이 생길 수 있으므로,
+`package:standalone` 스크립트는 `._*` 파일을 제거하고 `COPYFILE_DISABLE=1`로 압축합니다.
 
 Oracle Cloud 인스턴스에 업로드:
 
@@ -67,10 +77,35 @@ ssh -i ~/.ssh/oracle-cloud.pem opc@1.2.3.4
 Oracle Cloud 인스턴스에서:
 
 ```bash
+test -d /home/projects/oracle-admin && mv /home/projects/oracle-admin /home/projects/oracle-admin.bak.$(date +%Y%m%d%H%M%S)
 mkdir -p /home/projects/oracle-admin
-tar -xzf /home/project/oracle-admin-standalone.tar.gz -C /home/projects/oracle-admin
+tar -xzf /home/projects/oracle-admin-standalone.tar.gz -C /home/projects/oracle-admin
+ls -lah /home/projects/oracle-admin/.next/static/chunks | head
 cd /home/projects/oracle-admin
 PORT=3000 node server.js
+```
+
+정적 파일이 있는데도 브라우저에서 `/_next/static/chunks/*.css`가 404라면, 먼저 현재 실행 중인
+node 프로세스가 어느 폴더에서 실행 중인지 확인합니다.
+
+```bash
+ps -ef | grep 'node server.js' | grep -v grep
+readlink -f /proc/<PID>/cwd
+```
+
+`/home/projects/oracle-admin`가 아니면 예전 폴더의 서버가 계속 떠 있는 상태입니다. 해당 PID를
+종료하고 새 폴더에서 다시 실행합니다.
+
+```bash
+kill <PID>
+cd /home/projects/oracle-admin
+PORT=3000 node server.js
+```
+
+nginx가 `/_next` 경로를 별도로 가로채는지도 확인합니다.
+
+```bash
+sudo nginx -T | grep -n "_next\|proxy_pass\|listen 3095" -A 8 -B 8
 ```
 
 여기서 배포 경로는 `/home/projects/oracle-admin`입니다. 업로드 파일은 `/home/projects`에 두고,
@@ -201,6 +236,7 @@ ADMIN_USERNAME=admin
 ADMIN_PASSWORD=change-this-password
 ADMIN_SESSION_SECRET=change-this-long-random-secret
 ADMIN_SESSION_MAX_AGE_SECONDS=28800
+ADMIN_COOKIE_SECURE=false
 ```
 
 - `ADMIN_USERNAME`: 로그인 아이디
@@ -211,6 +247,9 @@ ADMIN_SESSION_MAX_AGE_SECONDS=28800
 - `ADMIN_SESSION_MAX_AGE_SECONDS`: 로그인 세션 유지시간(초)입니다. 기본값은 `28800`(8시간)이며
   `300`(5분)부터 `604800`(7일)까지 설정할 수 있습니다. 숫자가 아니거나 범위를 벗어나면
   기본값 8시간을 사용합니다.
+- `ADMIN_COOKIE_SECURE`: HTTPS에서만 세션 쿠키를 보낼지 정합니다. `https://`로 운영하면
+  `true`, 현재처럼 `http://도메인:3095`로 운영하면 `false`로 둡니다. 설정하지 않으면
+  production에서 자동으로 `true`가 됩니다.
 
 시간 입력 예시:
 
@@ -290,6 +329,7 @@ ADMIN_USERNAME=admin
 ADMIN_PASSWORD=replace-with-a-unique-password
 ADMIN_SESSION_SECRET=replace-with-a-long-random-secret
 ADMIN_SESSION_MAX_AGE_SECONDS=28800
+ADMIN_COOKIE_SECURE=false
 HOSTNAME=127.0.0.1
 PORT=3000
 ```
@@ -376,10 +416,23 @@ OCI_COMPARTMENT_ID=ocid1.compartment.oc1..example
 
 OCI API에서 확인할 예정인 항목:
 
-- Compute API: instance 목록, lifecycle state, shape, public/private IP
+- Compute API: instance 목록, lifecycle state, shape
 - Virtual Network API: VNIC, subnet, Security List, NSG ingress rule, cloud-level open ports
 - Monitoring API: CPU, network, availability 관련 metric
 - Announcements API: Oracle Cloud 점검, 장애, required action 공지
+
+현재 구현된 Next.js 서버 기능:
+
+- OCI REST API request signing
+- Compute instance 목록과 lifecycle state 조회
+- VNIC 기준 Security List/NSG ingress rule 요약
+- OCI API 호출 30분 서버 캐시
+
+아직 남은 항목:
+
+- OCI Monitoring metric 기반 CPU/network 사용량
+- Limit/Usage API 기반 무료 티어 한도 대비 사용량
+- Announcements API 기반 Oracle Cloud 공지/점검 표시
 
 주의:
 
