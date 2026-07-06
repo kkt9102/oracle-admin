@@ -10,11 +10,15 @@ type OciSettingsPanelProps = {
 };
 
 const OCI_KEY_DETAIL_URL =
-  "https://cloud.oracle.com/identity/domains/my-profile/auth-tokens?region=ap-chuncheon-1";
+  "https://cloud.oracle.com/identity/domains/my-profile/auth-tokens";
 
 export default function OciSettingsPanel({ summary }: OciSettingsPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const keyDetailUrl =
+    summary.region === "미설정"
+      ? OCI_KEY_DETAIL_URL
+      : `${OCI_KEY_DETAIL_URL}?region=${encodeURIComponent(summary.region)}`;
 
   useEffect(() => {
     if (!isOpen) {
@@ -119,7 +123,7 @@ export default function OciSettingsPanel({ summary }: OciSettingsPanelProps) {
 
             <div className={styles.modal_footer}>
               <a
-                href={OCI_KEY_DETAIL_URL}
+                href={keyDetailUrl}
                 rel="noopener noreferrer"
                 target="_blank"
               >
