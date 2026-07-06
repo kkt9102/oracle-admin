@@ -1,0 +1,57 @@
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid #dfe4db;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.portTable {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.portTable th,
+.portTable td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #edf0eb;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.portTable th {
+  color: #657178;
+  background: #f9faf8;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.portTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.portTable code {
+  color: #334139;
+  font-family: var(--font-geist-mono), monospace;
+}
+
+.protocolBadge {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 4px 7px;
+  color: #15513e;
+  background: #e3f1e8;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.emptyState {
+  border: 1px dashed #cfd8d2;
+  border-radius: 8px;
+  padding: 28px;
+  color: #657178;
+  background: #ffffff;
+  font-size: 14px;
+  text-align: center;
+}

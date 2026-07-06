@@ -1,0 +1,37 @@
+import Link from "next/link";
+import { logoutAction } from "../actions";
+import styles from "./Header.module.css";
+
+type HeaderProps = {
+  activePath?: "dashboard" | "settings";
+};
+
+export default function Header({ activePath = "dashboard" }: HeaderProps) {
+  return (
+    <header className={styles.header}>
+      <div>
+        <p className={styles.eyebrow}>Oracle Admin</p>
+        <h1>무료 티어 서버 상태</h1>
+      </div>
+      <nav className={styles.nav} aria-label="주요 메뉴">
+        <Link
+          className={activePath === "dashboard" ? styles.activeLink : styles.link}
+          href="/"
+        >
+          대시보드
+        </Link>
+        <Link
+          className={activePath === "settings" ? styles.activeLink : styles.link}
+          href="/settings"
+        >
+          설정
+        </Link>
+        <form action={logoutAction}>
+          <button className={styles.logoutButton} type="submit">
+            로그아웃
+          </button>
+        </form>
+      </nav>
+    </header>
+  );
+}

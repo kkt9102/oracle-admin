@@ -1,0 +1,143 @@
+.loginPage {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  color: #1d2428;
+  background:
+    linear-gradient(120deg, rgba(30, 91, 74, 0.12), transparent 38%),
+    #f6f7f4;
+}
+
+.loginPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  width: min(920px, 100%);
+  overflow: hidden;
+  border: 1px solid #dfe4db;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(29, 36, 40, 0.12);
+}
+
+.brandBlock {
+  display: flex;
+  min-height: 460px;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 18px;
+  padding: 48px;
+  background: #1e5b4a;
+  color: #ffffff;
+}
+
+.brandBlock h1 {
+  font-size: 36px;
+  line-height: 1.12;
+  font-weight: 700;
+}
+
+.brandBlock p {
+  max-width: 440px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.eyebrow {
+  color: #f3c37b;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.loginForm {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: 40px;
+}
+
+.loginForm label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #536066;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.loginForm input {
+  height: 44px;
+  border: 1px solid #cfd8d2;
+  border-radius: 6px;
+  padding: 0 12px;
+  color: #1d2428;
+  background: #ffffff;
+  font-size: 15px;
+}
+
+.loginForm input:focus {
+  border-color: #1e5b4a;
+  outline: 3px solid rgba(30, 91, 74, 0.16);
+}
+
+.loginForm button {
+  height: 42px;
+  border: 0;
+  border-radius: 6px;
+  color: #ffffff;
+  background: #1e5b4a;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.loginForm button:disabled {
+  cursor: not-allowed;
+  background: #9ca7a1;
+}
+
+.errorText,
+.warningText {
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.errorText {
+  color: #8c2b1f;
+  background: #fdebe6;
+}
+
+.warningText {
+  color: #655015;
+  background: #fff4cc;
+}
+
+@media (max-width: 920px) {
+  .loginPanel {
+    grid-template-columns: 1fr;
+  }
+
+  .brandBlock {
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 600px) {
+  .loginPage {
+    padding: 16px;
+  }
+
+  .brandBlock,
+  .loginForm {
+    padding: 28px;
+  }
+
+  .brandBlock h1 {
+    font-size: 30px;
+  }
+}

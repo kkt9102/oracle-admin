@@ -1,0 +1,43 @@
+.summaryBand {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 1180px;
+  margin: 0 auto 24px;
+  border: 1px solid #dfe4db;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.summaryBand div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+}
+
+.summaryBand div + div {
+  border-left: 1px solid #dfe4db;
+}
+
+.summaryBand span {
+  color: #657178;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.summaryBand strong {
+  overflow-wrap: anywhere;
+  font-size: 18px;
+}
+
+@media (max-width: 920px) {
+  .summaryBand {
+    grid-template-columns: 1fr;
+  }
+
+  .summaryBand div + div {
+    border-top: 1px solid #dfe4db;
+    border-left: 0;
+  }
+}

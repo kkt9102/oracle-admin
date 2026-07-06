@@ -68,7 +68,7 @@ Oracle Cloud 인스턴스에서:
 
 ```bash
 mkdir -p /home/projects/oracle-admin
-tar -xzf /home/projects/oracle-admin-standalone.tar.gz -C /home/projects/oracle-admin
+tar -xzf /home/project/oracle-admin-standalone.tar.gz -C /home/projects/oracle-admin
 cd /home/projects/oracle-admin
 PORT=3000 node server.js
 ```
@@ -214,13 +214,13 @@ ADMIN_SESSION_MAX_AGE_SECONDS=28800
 
 시간 입력 예시:
 
-| 유지시간 | 입력값 |
-| --- | ---: |
-| 30분 | `1800` |
-| 1시간 | `3600` |
-| 8시간 | `28800` |
-| 24시간 | `86400` |
-| 7일 | `604800` |
+| 유지시간 |   입력값 |
+| -------- | -------: |
+| 30분     |   `1800` |
+| 1시간    |   `3600` |
+| 8시간    |  `28800` |
+| 24시간   |  `86400` |
+| 7일      | `604800` |
 
 Linux에서 세션 비밀키를 생성하는 예시입니다. 출력된 값은 서버 환경변수에만 저장하고 문서,
 Git, 셸 기록 공유, 애플리케이션 로그에 남기지 않습니다.
